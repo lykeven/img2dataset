@@ -10,7 +10,9 @@ import json
 import time
 import hashlib
 import pyarrow as pa
+import pandas as pd
 import traceback
+import os
 
 import fsspec
 from .logger import CappedCounter
@@ -73,6 +75,25 @@ def compute_key(key, shard_id, oom_sample_per_shard, oom_shard_count):
         key_format=key_format, true_key=true_key
     )
     return str_key
+
+
+def replace_pq_with_json(
+    output_folder,
+    shard_id,
+    oom_shard_count,
+):
+    fs, output_path = fsspec.core.url_to_fs(output_folder)
+    shard_name = "{shard_id:0{oom_shard_count}d}".format(  # pylint: disable=consider-using-f-string
+        shard_id=shard_id, oom_shard_count=oom_shard_count
+    )
+    parquet_file = f"{output_path}/{shard_name}.parquet"
+    pf = pa.parquet.read_table(parquet_file)
+    df = pf.to_pandas()
+    js = df.to_json(orient='records', lines=True)    
+    json_file = f"{output_path}/{shard_name}.meta.jsonl"
+    with fs.open(json_file, "w") as f:
+        f.write(js)
+    os.remove(parquet_file)
 
 
 class Downloader:
@@ -354,4 +375,6 @@ class Downloader:
             status_dict,
             self.oom_shard_count,
         )
+        replace_pq_with_json(self.output_folder, shard_id, self.oom_shard_count)
         fs.rm(shard_path)
+
