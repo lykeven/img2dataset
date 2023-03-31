@@ -28,7 +28,8 @@ if __name__ == '__main__':
         caption_col="TEXT",
         enable_wandb=False,
         number_sample_per_shard=1000,
-        save_additional_columns=["NSFW", "similarity", "LICENSE"],
+        # require SAMPLE_ID to write id file
+        save_additional_columns=["SAMPLE_ID", "NSFW", "similarity", "LICENSE"],
         distributor="multiprocessing",
         oom_shard_count=6
     )
