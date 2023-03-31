@@ -126,7 +126,9 @@ class WebDatasetSampleWriter:
             for k, v in meta.items():
                 if isinstance(v, np.ndarray):
                     meta[k] = v.tolist()
+            # remove single json meta and add SAMPLE_ID file
             # sample["json"] = json.dumps(meta, indent=4)
+            sample["id"] = meta["SAMPLE_ID"]
             self.tarwriter.write(sample)
         self.buffered_parquet_writer.write(meta)
 
